@@ -15,16 +15,33 @@ class ProductosRepository:
         db.commit()
         db.refresh(json)
         return {"Mensaje": f"Producto: {json.nombre} con ID : {json.id} creado exitosamente"}
+    
+    
+    @staticmethod
+    def mandar_a_pedir_productos(db: Session ,limite: int = 10, salto: int = 0):
+         check = db.query(Productos).offset(salto).limit(limite).all()
+         return check
+
+
+
+
+
+
+
+
+
 """
-
-
-    check = db.query(Productos).filter(Productos.codigo == json.codigo).first()
+@router.get("/")
+def ver_productos (limite: int = 10, salto: int = 0 ,db: Session = Depends (abrir_puerta)):
     
+    check = db.query(Productos).offset(salto).limit(limite).all()
     
-        db.add(nuevo)
-        db.commit()
-        db.refresh(nuevo)
-        return {"Mensaje": f"Producto: {nuevo.nombre} con ID : {nuevo.id} creado exitosamente"}
-
+    if not check:
+        raise HTTPException(
+            satus_code = status.HTTP_404_NOT_FOUND,
+            detail = "No records found!"
+        )
+    else:
+        return check
 
 """
