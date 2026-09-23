@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from database.almacen import abrir_puerta
 from modules.productos.schema import Revisar_JSON_Crear_Producto
@@ -14,7 +14,11 @@ def crear_producto(json: Revisar_JSON_Crear_Producto, db: Session = Depends(abri
     return service.verificar(db, json)
 
 @router.get("/")
-def ver_productos(limite: int = 10, salto: int = 0, db: Session = Depends(abrir_puerta)):
+def ver_productos(
+    limite: int = Query(default=10, ge=1, le=100, description="Cantidad de productos a retornar (minimo 1, maximo 100)"),
+    salto: int = Query(default=0, ge=0, description="Cantidad de registros a saltar para la paginacion"),
+    db: Session = Depends(abrir_puerta)
+):
     return service.revisar_si_hay(db, limite, salto)
 
 
