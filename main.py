@@ -12,4 +12,3 @@ miclaseBase.metadata.create_all(bind=motor)
 
 # Registrar rutas del modulo de productos
 app.include_router(router_productos)
-}
