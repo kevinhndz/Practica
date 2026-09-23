@@ -1,29 +1,24 @@
-from fastapi import FastAPI , HTTPException, status, Depends, APIRouter
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database.almacen import abrir_puerta, miclaseBase, motor
-from modules.productos.model import Productos
+from database.almacen import abrir_puerta
 from modules.productos.schema import Revisar_JSON_Crear_Producto
 from modules.productos.service import ProductosService as service
 
-
 router = APIRouter(
-    prefix = "/productos",
-    tags = ["Productos"]
+    prefix="/productos",
+    tags=["Productos"]
 )
 
-#json
-@router.post("/", status_code= 201)
-def crear_producto(json:Revisar_JSON_Crear_Producto, db: Session = Depends(abrir_puerta)):
-    service.verificar(db, json)
-
-
-
-
+@router.post("/", status_code=201)
+def crear_producto(json: Revisar_JSON_Crear_Producto, db: Session = Depends(abrir_puerta)):
+    return service.verificar(db, json)
 
 
 
 
 """
+PROTOTYPE: 
+
 from fastapi import FastAPI , HTTPException, status, Depends, APIRouter
 from sqlalchemy.orm import Session
 from database.almacen import abrir_puerta, miclaseBase, motor
