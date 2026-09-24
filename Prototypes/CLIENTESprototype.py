@@ -4,7 +4,7 @@ from database.almacen import abrir_puerta, miclaseBase, motor
 from modules.Clients.model import Clients
 from modules.usuarios.model import Users
 from utils.hash import encriptar_contrasena
-from modules.Clients.schema import Revisar_JSON_Crear_Nuevo_Cliente
+from modules.Clients.schema import Revisar_JSON_Crear_Nuevo_Cliente, Revisar_JSON_Editar_Cliente
 
 
 router = APIRouter(
@@ -47,5 +47,22 @@ def crear_nuevo_cliente(json: Revisar_JSON_Crear_Nuevo_Cliente,
         db.refresh(new_customer)
         return new_customer
         
+        
+@router.put("/{id}")
+def editar(id: int, json: Revisar_JSON_Editar_Cliente, db: Session = Depends(abrir_puerta)):
+    
+    check = db.query(Clients).filter(Clients.id == id).first()
+    
+    if check is not None:
+        check.nombre = json.nombre
+        check.email = json.email
+        db.commit()
+        db.refresh(check)
+        return check
+    else:
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail = "No se encontro el recurso"
+        )
         
         

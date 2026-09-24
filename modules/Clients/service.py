@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from modules.Clients.repository import ClientsRepository as repo
 from modules.Clients.model import Clients
 from modules.usuarios.model import Users
-from modules.Clients.schema import Revisar_JSON_Crear_Nuevo_Cliente
+from modules.Clients.schema import Revisar_JSON_Crear_Nuevo_Cliente, Revisar_JSON_Editar_Cliente
 from utils.hash import encriptar_contrasena
 
 
@@ -39,6 +39,22 @@ class ClientsService():
             
             new_c = repo.crear_nuevo_customer(db,new_customer)
             return new_c
+    
+    def editar_cliente(db: Session, json: Revisar_JSON_Editar_Cliente, id: int):
+        
+        check = repo.revisar_duplicados_por_ID_put(db, id)
+        
+        if check is not None:
+                check.nombre = json.nombre
+                check.email = json.email
+                editado = repo.guardar_cambios_put(db, check)
+                return editado
+        else:
+            raise HTTPException(
+                    status_code= status.HTTP_404_NOT_FOUND,
+                    detail = "No se encontro el recurso"
+                )
+        
                 
     
             
@@ -48,42 +64,22 @@ class ClientsService():
 
 
 """
-
-@router.post("/")
-def crear_nuevo_cliente(json: Revisar_JSON_Crear_Nuevo_Cliente,
-                        db: Session = Depends(abrir_puerta)
-                        ):
+@router.put("/{id}")
+def editar(id: int, json: Revisar_JSON_Editar_Cliente, db: Session = Depends(abrir_puerta)):
     
-    check = db.query(Clients).filter(Clients.email == json.email).first()
+    check = db.query(Clients).filter(Clients.id == id).first()
     
     if check is not None:
-        raise HTTPException(
-            status_code = status.HTTP_409_CONFLICT,
-            detail = "Cliente ya esta registrado"
-        )
-    else:
-        
-        new_user = Users(
-            
-            user = json.user,
-            password = encriptar_contrasena(json.password),
-            rol = json.rol
-        )
-        
-        db.add(new_user)
-        db.refresh(new_user)
-        
-        new_customer = Clients(
-            nombre = json.nombre,
-            email = json.email,
-            id_user = new_user.id
-        )
-        
-        db.add(new_customer)
+        check.nombre = json.nombre
+        check.email = json.email
         db.commit()
-        db.refresh(new_customer)
-        return new_customer
+        db.refresh(check)
+        return check
+    else:
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail = "No se encontro el recurso"
+        )
         
-
 
 """
