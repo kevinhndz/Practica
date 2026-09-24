@@ -1,81 +1,90 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from modules.productos.repository import ProductosRepository as repo
-from modules.productos.model import Productos
-from modules.productos.schema import Revisar_JSON_Crear_Producto, Revisar_JSON_Editar_Producto
+from modules.Clients.repository import ClientsRepository as repo
+from modules.Clients.model import Clients
+from modules.usuarios.model import Users
+from modules.Clients.schema import (
+    Revisar_JSON_Crear_Nuevo_Cliente, 
+    Revisar_JSON_Editar_Cliente,
+    Revisar_JSON_Editar_Cliente_Parcial
+)
+from utils.hash import encriptar_contrasena
 
-class ProductosService:
+
+class ClientsService():
     
     @staticmethod
-    def verificar(db: Session, json: Revisar_JSON_Crear_Producto):
-        revisar = repo.check_existencia_producto(db, json)
+    def crear_cliente(db: Session, json: Revisar_JSON_Crear_Nuevo_Cliente):
         
-        if revisar is not None:
+        check = repo.revisar_duplicados(db, json)
+        
+        if check is not None:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El producto con codigo {json.codigo} ya existe"
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cliente ya esta registrado"
             )
         else:
-            nuevo = Productos(
+            new_user = Users(
+                user=json.user,
+                password=encriptar_contrasena(json.password),
+                rol=json.rol
+            )
+            
+            new_u = repo.crear_nuevo_user(db, new_user)
+                
+            new_customer = Clients(
                 nombre=json.nombre,
-                stock=json.stock,
-                codigo=json.codigo
+                email=json.email,
+                id_user=new_user.id
             )
-            return repo.agregar_producto_al_sistema(db, nuevo)
+            
+            new_c = repo.crear_nuevo_customer(db, new_customer)
+            return new_c
     
     @staticmethod
-    def revisar_si_hay(db: Session, limite: int = 10, salto: int = 0):
-        check = repo.mandar_a_pedir_productos(db, limite, salto)
+    def editar_cliente(db: Session, json: Revisar_JSON_Editar_Cliente, id: int):
         
-        if not check:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No records found!"
-            )
-        else:
-            return check
-
-    @staticmethod
-    def editar_producto(db: Session, id: int, json: Revisar_JSON_Crear_Producto):
-        check = repo.buscar_por_id(db, id)
+        check = repo.revisar_duplicados_por_ID_put(db, id)
         
         if check is not None:
             check.nombre = json.nombre
-            check.codigo = json.codigo
-            check.stock = json.stock
-            return repo.guardar_cambios(db, check)
+            check.email = json.email
+            editado = repo.guardar_cambios_put(db, check)
+            return editado
         else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Recurso no encontrado"
+                detail="No se encontro el recurso"
             )
 
+    # --- METODOS PARA PATCH Y DELETE ---
+
     @staticmethod
-    def editar_producto_parcial(db: Session, id: int, json: Revisar_JSON_Editar_Producto):
+    def editar_cliente_parcial(db: Session, json: Revisar_JSON_Editar_Cliente_Parcial, id: int):
         check = repo.buscar_por_id(db, id)
         
         if check is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Recurso no encontrado"
+                detail="No se encontro el recurso"
             )
         
-        datos_a_actualizar = json.model_dump(exclude_unset=True)
+        datos_actualizar = json.model_dump(exclude_unset=True)
         
-        for clave, valor in datos_a_actualizar.items():
-            setattr(check, clave, valor)
+        for campo, valor in datos_actualizar.items():
+            setattr(check, campo, valor)
             
-        return repo.guardar_cambios(db, check)
+        return repo.guardar_cambios_patch(db, check)
 
     @staticmethod
-    def borrar_producto(db: Session, id: int):
+    def eliminar_cliente(db: Session, id: int):
         check = repo.buscar_por_id(db, id)
         
         if check is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Recurso no encontrado"
+                detail="No se encontro el recurso"
             )
-        
-        repo.eliminar_producto(db, check)
-        return {"mensaje": f"El producto con ID {id} fue eliminado correctamente"}
+            
+        repo.eliminar_cliente(db, check)
+        return None
