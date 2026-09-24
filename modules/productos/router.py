@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from database.almacen import abrir_puerta
-from modules.productos.schema import Revisar_JSON_Crear_Producto
+from modules.productos.schema import Revisar_JSON_Crear_Producto, Revisar_JSON_Editar_Producto
 from modules.productos.service import ProductosService as service
 
 router = APIRouter(
@@ -21,20 +21,14 @@ def ver_productos(
 ):
     return service.revisar_si_hay(db, limite, salto)
 
+@router.put("/{id}")
+def editar_producto(id: int, json: Revisar_JSON_Crear_Producto, db: Session = Depends(abrir_puerta)):
+    return service.editar_producto(db, id, json)
 
-"""
+@router.patch("/{id}")
+def editar_producto_parcial(id: int, json: Revisar_JSON_Editar_Producto, db: Session = Depends(abrir_puerta)):
+    return service.editar_producto_parcial(db, id, json)
 
-@router.get("/")
-def ver_productos (limite: int = 10, salto: int = 0 ,db: Session = Depends (abrir_puerta)):
-    
-    check = db.query(Productos).offset(salto).limit(limite).all()
-    
-    if not check:
-        raise HTTPException(
-            satus_code = status.HTTP_404_NOT_FOUND,
-            detail = "No records found!"
-        )
-    else:
-        return check
-
-"""
+@router.delete("/{id}")
+def borrar_producto(id: int, db: Session = Depends(abrir_puerta)):
+    return service.borrar_producto(db, id)

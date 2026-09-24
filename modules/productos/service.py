@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from modules.productos.repository import ProductosRepository as repo
 from modules.productos.model import Productos
-from modules.productos.schema import Revisar_JSON_Crear_Producto
+from modules.productos.schema import Revisar_JSON_Crear_Producto, Revisar_JSON_Editar_Producto
 
 class ProductosService:
     
@@ -21,7 +21,6 @@ class ProductosService:
                 stock=json.stock,
                 codigo=json.codigo
             )
-            
             return repo.agregar_producto_al_sistema(db, nuevo)
     
     @staticmethod
@@ -29,29 +28,54 @@ class ProductosService:
         check = repo.mandar_a_pedir_productos(db, limite, salto)
         
         if not check:
-                raise HTTPException(
-                    status_code = status.HTTP_404_NOT_FOUND,
-                    detail = "No records found!"
-                )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No records found!"
+            )
         else:
             return check
-        
-        
-        
 
+    @staticmethod
+    def editar_producto(db: Session, id: int, json: Revisar_JSON_Crear_Producto):
+        check = repo.buscar_por_id(db, id)
+        
+        if check is not None:
+            check.nombre = json.nombre
+            check.codigo = json.codigo
+            check.stock = json.stock
+            return repo.guardar_cambios(db, check)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Recurso no encontrado"
+            )
 
-"""
-@router.get("/")
-def ver_productos (limite: int = 10, salto: int = 0 ,db: Session = Depends (abrir_puerta)):
-    
-    check = db.query(Productos).offset(salto).limit(limite).all()
-    
-    if not check:
-        raise HTTPException(
-            satus_code = status.HTTP_404_NOT_FOUND,
-            detail = "No records found!"
-        )
-    else:
-        return check
+    @staticmethod
+    def editar_producto_parcial(db: Session, id: int, json: Revisar_JSON_Editar_Producto):
+        check = repo.buscar_por_id(db, id)
+        
+        if check is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Recurso no encontrado"
+            )
+        
+        datos_a_actualizar = json.model_dump(exclude_unset=True)
+        
+        for clave, valor in datos_a_actualizar.items():
+            setattr(check, clave, valor)
+            
+        return repo.guardar_cambios(db, check)
 
-"""
+    @staticmethod
+    def borrar_producto(db: Session, id: int):
+        check = repo.buscar_por_id(db, id)
+        
+        if check is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Recurso no encontrado"
+            )
+        
+        repo.eliminar_producto(db, check)
+        return {"mensaje": f"El producto con ID {id} fue eliminado correctamente"}
