@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from database.almacen import miclaseBase, motor
 from modules.productos.router import router as router_productos
 from modules.Clients.router import router as router_clients
+from modules.usuarios.router import router as router_usuarios
 
 app = FastAPI(
     title="Sistema de Almacen",
@@ -14,3 +15,4 @@ miclaseBase.metadata.create_all(bind=motor)
 # Registrar rutas del modulo de productos
 app.include_router(router_productos)
 app.include_router(router_clients)
+app.include_router(router_usuarios)
