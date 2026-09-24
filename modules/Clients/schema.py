@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
+from typing import Optional
 
 class Revisar_JSON_Crear_Nuevo_Cliente(BaseModel):
     
@@ -13,4 +14,10 @@ class Revisar_JSON_Editar_Cliente(BaseModel):
     nombre: str = Field(min_length= 3, max_length=30)
     email: EmailStr
     rol :str
-        
+
+class Revisar_JSON_Editar_Cliente_Parcial(BaseModel):
+    
+    nombre: Optional[str] = Field(None, min_length= 3, max_length=30)
+    email: Optional[EmailStr] = None
+    rol :Optional[str] = None
+    
